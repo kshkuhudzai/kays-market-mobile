@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, FlatList, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, FlatList, ActivityIndicator, Text, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
+
 import { getListings } from '../../src/api/client';
 import ListingCard from '../../src/components/ListingCard';
 
@@ -12,26 +14,40 @@ interface Listing {
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const response = await getListings();
-        // THE FIX: We reach inside the response object to get the actual array
-        setListings(response.data);
-      } catch (err) {
-        console.error("Failed to load:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // NEW: State to track if the user is currently pulling to refresh
+  const [refreshing, setRefreshing] = useState(false);
 
+  // We moved the fetch logic into its own function so we can call it on load AND on refresh
+  const fetchListings = async () => {
+    try {
+      const response = await getListings();
+      setListings(response.data);
+      setError(false); // Clear any previous errors if it succeeds
+    } catch (err) {
+      console.error("Failed to load:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Run once when the screen first loads
+  useEffect(() => {
     fetchListings();
   }, []);
+
+  // NEW: The function that runs when you pull down the screen
+  const onRefresh = async () => {
+    setRefreshing(true); // Shows the little spinning circle
+    await fetchListings(); // Goes to the database to get fresh data
+    setRefreshing(false); // Hides the spinning circle
+  };
 
   if (loading) {
     return (
@@ -60,8 +76,22 @@ export default function HomeScreen() {
         <FlatList
           data={listings}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <ListingCard item={item} />}
+          renderItem={({ item }) => (
+            <ListingCard
+              item={item}
+              onPress={() => router.push(`/listing/${item.id}` as any)}
+            />
+          )}
           contentContainerStyle={styles.list}
+          // NEW: We attach the pull-to-refresh component to the FlatList here
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="#2ecc71" // iOS spinner color
+              colors={['#2ecc71']} // Android spinner color
+            />
+          }
         />
       )}
     </View>

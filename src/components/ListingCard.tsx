@@ -13,16 +13,31 @@ interface ListingProps {
 }
 
 export default function ListingCard({ item, onPress }: ListingProps) {
+
+  // THE ULTIMATE FIX: Ignore the IP saved in the database completely.
+  // Just grab the actual image name at the end, and force it to your exact server address.
+  const getValidImageUrl = (url?: string) => {
+    if (!url) return null;
+
+    // This takes something like "http://localhost/uploads/123-pic.jpg"
+    // and just extracts "123-pic.jpg"
+    const filename = url.split('/').pop();
+
+    // Now we force it to the exact correct IP and PORT
+    return `http://192.168.100.105:3000/uploads/${filename}`;
+  };
+
+  const validImageUrl = getValidImageUrl(item.imageUrl);
+
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      {/* If we have an image, show it. Otherwise, show a grey box with text */}
-      {item.imageUrl ? (
+      {validImageUrl ? (
         <Image
-          source={{ uri: item.imageUrl.replace('localhost', '192.168.100.105') }}
+          source={{ uri: validImageUrl }}
           style={styles.image}
           resizeMode="cover"
         />
@@ -35,7 +50,7 @@ export default function ListingCard({ item, onPress }: ListingProps) {
       <View style={styles.details}>
         <View style={styles.row}>
           <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.price}>${Number(item.price || 0).toFixed(2)}</Text>
         </View>
         <Text style={styles.location}>📍 {item.locationName}</Text>
       </View>
@@ -65,7 +80,7 @@ const styles = StyleSheet.create({
   noImageContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#e9ecef', // Light grey background
+    backgroundColor: '#e9ecef',
   },
   noImageText: {
     color: '#adb5bd',
