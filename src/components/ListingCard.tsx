@@ -1,65 +1,100 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface ListingProps {
   item: {
+    id: number;
     title: string;
     price: number;
     imageUrl?: string;
     locationName: string;
   };
+  onPress?: () => void;
 }
 
-export default function ListingCard({ item }: ListingProps) {
+export default function ListingCard({ item, onPress }: ListingProps) {
   return (
-    <View style={styles.card}>
-      {item.imageUrl && (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {/* If we have an image, show it. Otherwise, show a grey box with text */}
+      {item.imageUrl ? (
         <Image
           source={{ uri: item.imageUrl.replace('localhost', '192.168.100.105') }}
           style={styles.image}
+          resizeMode="cover"
         />
+      ) : (
+        <View style={[styles.image, styles.noImageContainer]}>
+          <Text style={styles.noImageText}>📷 No Image Available</Text>
+        </View>
       )}
+
       <View style={styles.details}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.price}>${item.price.toLocaleString()}</Text>
-        <Text style={styles.location}>{item.locationName}</Text>
+        <View style={styles.row}>
+          <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+        </View>
+        <Text style={styles.location}>📍 {item.locationName}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginVertical: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    marginBottom: 16,
     overflow: 'hidden',
-    elevation: 3, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   image: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f0f0f0',
+    height: 180,
+    backgroundColor: '#f8f9fa',
+  },
+  noImageContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e9ecef', // Light grey background
+  },
+  noImageText: {
+    color: '#adb5bd',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   details: {
-    padding: 15,
+    padding: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#2c3e50',
+    flex: 1,
+    marginRight: 10,
   },
   price: {
-    fontSize: 16,
-    color: '#2ecc71',
-    marginTop: 5,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#27ae60',
   },
   location: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 5,
+    fontSize: 14,
+    color: '#7f8c8d',
   },
 });
